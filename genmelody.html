@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首都圏駅発車メロディアプリ</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .train-container {
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .station-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .play-button {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            transition: all 0.3s ease;
+        }
+        
+        .play-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .stop-button {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+        }
+        
+        .stop-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(116, 185, 255, 0.3);
+        }
+        
+        .train-emoji {
+            font-size: 3rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-white mb-4">
+                    <span class="train-emoji">🚃</span>
+                    駅発車メロディアプリ
+                    <span class="train-emoji">🚃</span>
+                </h1>
+                <p class="text-xl text-white opacity-90">首都圏の駅の発車メロディを聞いてみよう！</p>
+            </div>
+
+            <!-- Main Content -->
+            <div class="station-card p-8 mb-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Controls Section -->
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-train mr-3 text-blue-600"></i>
+                            路線と駅を選んでね
+                        </h2>
+                        
+                        <!-- Route Selection -->
+                        <div>
+                            <label class="block text-lg font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-route mr-2 text-green-600"></i>
+                                路線を選択
+                            </label>
+                            <select id="routeSelect" class="w-full p-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all">
+                                <option value="">路線を選んでください</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Station Selection -->
+                        <div>
+                            <label class="block text-lg font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-map-marker-alt mr-2 text-red-600"></i>
+                                駅を選択
+                            </label>
+                            <select id="stationSelect" class="w-full p-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all" disabled>
+                                <option value="">まず路線を選んでください</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Control Buttons -->
+                        <div class="flex gap-4">
+                            <button id="playButton" class="flex-1 py-4 px-6 text-white font-bold text-lg rounded-xl play-button disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="fas fa-play mr-2"></i>
+                                再生
+                            </button>
+                            <button id="stopButton" class="flex-1 py-4 px-6 text-white font-bold text-lg rounded-xl stop-button disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="fas fa-stop mr-2"></i>
+                                停止
+                            </button>
+                        </div>
+                        
+                        <!-- Current Selection Display -->
+                        <div id="currentSelection" class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 hidden">
+                            <h3 class="font-bold text-blue-800 mb-2">現在の選択:</h3>
+                            <p id="selectionText" class="text-blue-700"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Visual Section -->
+                    <div class="flex flex-col items-center justify-center space-y-6">
+                        <div class="text-8xl">🚉</div>
+                        <div class="text-center">
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">発車メロディを楽しもう！</h3>
+                            <p class="text-gray-600">好きな駅を選んで、懐かしいメロディを聞いてみよう</p>
+                        </div>
+                        <div class="train-container p-4 rounded-2xl">
+                            <div class="text-4xl text-center">🚄💨</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- YouTube Player (Hidden) -->
+            <div id="playerContainer" class="hidden">
+                <div id="player"></div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="station-card p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle mr-2 text-blue-600"></i>
+                    使い方
+                </h3>
+                <div class="grid md:grid-cols-3 gap-4 text-gray-700">
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">1️⃣</div>
+                        <p>路線を選択します</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">2️⃣</div>
+                        <p>駅を選択します</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl mb-2">3️⃣</div>
+                        <p>再生ボタンを押します</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <script>
+        // 駅データ構造（拡張可能）
+        // 注意: YouTubeの動画IDは実際の発車メロディ動画のIDに置き換えてください
+        const stationData = {
+            "JR山手線": {
+                color: "#9acd32",
+                stations: {
+                    "新宿": { videoId: "dQw4w9WgXcQ", name: "新宿駅" }, // サンプルID - 実際のメロディ動画IDに置き換え
+                    "渋谷": { videoId: "dQw4w9WgXcQ", name: "渋谷駅" },
+                    "原宿": { videoId: "dQw4w9WgXcQ", name: "原宿駅" },
+                    "恵比寿": { videoId: "dQw4w9WgXcQ", name: "恵比寿駅" },
+                    "品川": { videoId: "dQw4w9WgXcQ", name: "品川駅" },
+                    "東京": { videoId: "dQw4w9WgXcQ", name: "東京駅" },
+                    "上野": { videoId: "dQw4w9WgXcQ", name: "上野駅" },
+                    "池袋": { videoId: "dQw4w9WgXcQ", name: "池袋駅" }
+                }
+            },
+            "JR中央線": {
+                color: "#ff6600",
+                stations: {
+                    "新宿": { videoId: "dQw4w9WgXcQ", name: "新宿駅" },
+                    "四ツ谷": { videoId: "dQw4w9WgXcQ", name: "四ツ谷駅" },
+                    "お茶の水": { videoId: "dQw4w9WgXcQ", name: "お茶の水駅" },
+                    "東京": { videoId: "dQw4w9WgXcQ", name: "東京駅" },
+                    "吉祥寺": { videoId: "dQw4w9WgXcQ", name: "吉祥寺駅" },
+                    "三鷹": { videoId: "dQw4w9WgXcQ", name: "三鷹駅" }
+                }
+            },
+            "JR京浜東北線": {
+                color: "#0066cc",
+                stations: {
+                    "品川": { videoId: "dQw4w9WgXcQ", name: "品川駅" },
+                    "新橋": { videoId: "dQw4w9WgXcQ", name: "新橋駅" },
+                    "東京": { videoId: "dQw4w9WgXcQ", name: "東京駅" },
+                    "上野": { videoId: "dQw4w9WgXcQ", name: "上野駅" },
+                    "大宮": { videoId: "dQw4w9WgXcQ", name: "大宮駅" }
+                }
+            },
+            "東急田園都市線": {
+                color: "#009639",
+                stations: {
+                    "渋谷": { videoId: "dQw4w9WgXcQ", name: "渋谷駅" },
+                    "二子玉川": { videoId: "dQw4w9WgXcQ", name: "二子玉川駅" },
+                    "溝の口": { videoId: "dQw4w9WgXcQ", name: "溝の口駅" },
+                    "中央林間": { videoId: "dQw4w9WgXcQ", name: "中央林間駅" }
+                }
+            },
+            "小田急線": {
+                color: "#0066cc",
+                stations: {
+                    "新宿": { videoId: "dQw4w9WgXcQ", name: "新宿駅" },
+                    "下北沢": { videoId: "dQw4w9WgXcQ", name: "下北沢駅" },
+                    "成城学園前": { videoId: "dQw4w9WgXcQ", name: "成城学園前駅" },
+                    "町田": { videoId: "dQw4w9WgXcQ", name: "町田駅" }
+                }
+            }
+        };
+
+        // DOM要素
+        const routeSelect = document.getElementById('routeSelect');
+        const stationSelect = document.getElementById('stationSelect');
+        const playButton = document.getElementById('playButton');
+        const stopButton = document.getElementById('stopButton');
+        const currentSelection = document.getElementById('currentSelection');
+        const selectionText = document.getElementById('selectionText');
+
+        // YouTube Player変数
+        let player;
+        let currentVideoId = null;
+
+        // YouTube IFrame APIの準備完了時に呼ばれる関数
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '0',
+                width: '0',
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            console.log('YouTube Player Ready');
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                resetPlayButton();
+            }
+        }
+
+        // 初期化
+        function initializeApp() {
+            populateRoutes();
+            setupEventListeners();
+        }
+
+        // 路線ドロップダウンを設定
+        function populateRoutes() {
+            Object.keys(stationData).forEach(route => {
+                const option = document.createElement('option');
+                option.value = route;
+                option.textContent = route;
+                routeSelect.appendChild(option);
+            });
+        }
+
+        // イベントリスナーを設定
+        function setupEventListeners() {
+            routeSelect.addEventListener('change', handleRouteChange);
+            stationSelect.addEventListener('change', handleStationChange);
+            playButton.addEventListener('click', handlePlay);
+            stopButton.addEventListener('click', handleStop);
+        }
+
+        // 路線変更時の処理
+        function handleRouteChange() {
+            const selectedRoute = routeSelect.value;
+            stationSelect.innerHTML = '<option value="">駅を選んでください</option>';
+            stationSelect.disabled = !selectedRoute;
+            
+            if (selectedRoute && stationData[selectedRoute]) {
+                const stations = stationData[selectedRoute].stations;
+                Object.keys(stations).forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station;
+                    option.textContent = stations[station].name;
+                    stationSelect.appendChild(option);
+                });
+                stationSelect.disabled = false;
+            }
+            
+            updateButtons();
+            hideCurrentSelection();
+        }
+
+        // 駅変更時の処理
+        function handleStationChange() {
+            updateButtons();
+            updateCurrentSelection();
+        }
+
+        // ボタンの状態を更新
+        function updateButtons() {
+            const routeSelected = routeSelect.value;
+            const stationSelected = stationSelect.value;
+            const canPlay = routeSelected && stationSelected;
+            
+            playButton.disabled = !canPlay;
+            stopButton.disabled = true;
+        }
+
+        // 現在の選択を表示
+        function updateCurrentSelection() {
+            const routeSelected = routeSelect.value;
+            const stationSelected = stationSelect.value;
+            
+            if (routeSelected && stationSelected) {
+                const stationName = stationData[routeSelected].stations[stationSelected].name;
+                selectionText.textContent = `${routeSelected} - ${stationName}`;
+                currentSelection.classList.remove('hidden');
+            } else {
+                hideCurrentSelection();
+            }
+        }
+
+        // 現在の選択を非表示
+        function hideCurrentSelection() {
+            currentSelection.classList.add('hidden');
+        }
+
+        // 再生処理
+        function handlePlay() {
+            const routeSelected = routeSelect.value;
+            const stationSelected = stationSelect.value;
+            
+            if (!routeSelected || !stationSelected || !player) return;
+            
+            const videoId = stationData[routeSelected].stations[stationSelected].videoId;
+            currentVideoId = videoId;
+            
+            // ボタンの状態を更新
+            playButton.disabled = true;
+            stopButton.disabled = false;
+            playButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>読み込み中...';
+            
+            // YouTube動画を読み込んで再生
+            player.loadVideoById(videoId);
+            player.playVideo();
+            
+            // 少し遅れてボタンのテキストを元に戻す
+            setTimeout(() => {
+                if (playButton.innerHTML.includes('読み込み中')) {
+                    playButton.innerHTML = '<i class="fas fa-play mr-2"></i>再生';
+                }
+            }, 2000);
+        }
+
+        // 停止処理
+        function handleStop() {
+            if (player) {
+                player.stopVideo();
+            }
+            resetPlayButton();
+        }
+
+        // 再生ボタンをリセット
+        function resetPlayButton() {
+            playButton.disabled = false;
+            stopButton.disabled = true;
+            playButton.innerHTML = '<i class="fas fa-play mr-2"></i>再生';
+        }
+
+        // アプリケーション開始
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // 新しい駅データを追加するためのヘルパー関数（開発者用）
+        function addStation(routeName, stationKey, stationName, youtubeVideoId) {
+            if (!stationData[routeName]) {
+                stationData[routeName] = { color: "#666666", stations: {} };
+            }
+            stationData[routeName].stations[stationKey] = {
+                videoId: youtubeVideoId,
+                name: stationName
+            };
+            console.log(`${routeName}の${stationName}を追加しました`);
+        }
+
+        // 使用例（コンソールで実行）:
+        // addStation("JR山手線", "秋葉原", "秋葉原駅", "実際のYouTube動画ID");
+    </script>
+</body>
+</html>
