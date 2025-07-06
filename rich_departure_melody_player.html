@@ -5102,8 +5102,10 @@
         }
 
         function onPlayerReady(event) {
-            console.log('YouTube Player Ready');
-            initializeApp(); // プレーヤー準備完了後にアプリを初期化
+            function onPlayerReady(event) {
+            // Player is ready
+            setLoading(false);
+            event.target.playVideo();
         }
 
         function onPlayerStateChange(event) {

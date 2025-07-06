@@ -1,1 +1,1 @@
-Initial commit
+Fix: Explicitly play video on player ready
