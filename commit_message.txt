@@ -1,1 +1,1 @@
-Fix: Explicitly play video on player ready
+Fix: Rework player logic for cross-device compatibility
