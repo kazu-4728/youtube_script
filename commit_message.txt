@@ -1,1 +1,1 @@
-Fix: Rework player logic for cross-device compatibility
+Revert: rich_departure_melody_player.html to a working state after previous failed attempts.
