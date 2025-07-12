@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>首都圏駅発車メロディアプリ</title>
+    <link rel="manifest" href="/youtube_script/manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <style>
@@ -328,7 +329,10 @@
             
             // YouTube動画を読み込んで再生
             player.loadVideoById(videoId);
-            player.playVideo();
+            player.playVideo().catch(error => {
+                console.error('YouTube video playback failed:', error);
+                resetPlayButton(); // エラー時もボタンをリセット
+            });
             
             // 少し遅れてボタンのテキストを元に戻す
             setTimeout(() => {
