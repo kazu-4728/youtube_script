@@ -38,3 +38,14 @@ YouTube IFrame Player APIの初期化パラメータがモバイル環境の自�
 *   モバイルでのYouTube動画再生問題の解決策として、`rich_player_template.html` に `playsinline: 1` パラメータのみを追加してデプロイしたが、モバイルでの再生は改善されなかった。
 *   次に、`playsinline: 1` に加えて `origin: window.location.origin` パラメータも追加してデプロイしたが、PCでの再生もできなくなったため、全ての変更を元に戻した。
 *   PCでの動作が正常に戻ったことを確認。モバイルでの再生問題は引き続き未解決。
+
+### 2025年7月12日 (続き)
+*   PWA化の試みを開始。
+    *   `manifest.json` を作成し、`rich_player_template.html` から参照するように修正。
+    *   PWAアイコン (`icon-192x192.png`, `icon-512x512.png`) を `images` ディレクトリに配置。
+    *   GitHub Pagesにデプロイ後、iOSデバイスのホーム画面への追加は成功したが、YouTube動画の再生はできなかった。
+*   `player.playVideo()` 呼び出しに `.catch()` を追加し、エラーハンドリングを強化。
+*   `rich_player_template.html` の `YT.Player` 初期化オプションに `height: '1'`, `width: '1'` と `playerVars: { 'playsinline': 1 }` を再導入。
+*   PCでの動作は問題ないことを確認し、GitHub Pagesにデプロイ。
+*   モバイルでのテストで、コンソールに `[Eruda] Please call "eruda.init()" first` および `Script error.` が大量に出力され、動画が再生されないことを確認。
+*   `rich_player_template.html` および `generate_rich_player_html.py` を確認したが、`Eruda` に関連するコードは直接見当たらず、別の場所から読み込まれている可能性が高い。
