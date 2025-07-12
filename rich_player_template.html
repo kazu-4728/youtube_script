@@ -208,8 +208,11 @@
         // YouTube IFrame APIの準備完了時に呼ばれる関数
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '0',
-                width: '0',
+                height: '1',
+                width: '1',
+                playerVars: {
+                    'playsinline': 1
+                },
                 events: {
                     'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange
