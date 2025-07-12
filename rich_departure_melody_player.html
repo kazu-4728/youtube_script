@@ -124,11 +124,6 @@
                             </select>
                         </div>
                         
-                        <!-- YouTube Player -->
-                        <div id="playerContainer" class="mt-4">
-                            <div id="player"></div>
-                        </div>
-                        
                         <!-- Current Selection Display -->
                         <div id="currentSelection" class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 hidden">
                             <h3 class="font-bold text-blue-800 mb-2">現在の選択:</h3>
@@ -137,22 +132,16 @@
                     </div>
                     
                     <!-- Visual Section -->
-                    <div class="flex flex-col items-center justify-center space-y-6">
-                        <div class="text-8xl">🚉</div>
+                    <div class="space-y-6">
+                        <div class="w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
+                            <div id="player"></div>
+                        </div>
                         <div class="text-center">
                             <h3 class="text-2xl font-bold text-gray-800 mb-2">発車メロディを楽しもう！</h3>
                             <p class="text-gray-600">好きな駅を選んで、懐かしいメロディを聞いてみよう</p>
                         </div>
-                        <div class="train-container p-4 rounded-2xl">
-                            <div class="text-4xl text-center">🚄💨</div>
-                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- YouTube Player -->
-            <div id="playerContainer">
-                <div id="player"></div>
             </div>
             
             <!-- Instructions -->
@@ -161,7 +150,7 @@
                     <i class="fas fa-info-circle mr-2 text-blue-600"></i>
                     使い方
                 </h3>
-                <div class="grid md:grid-cols-3 gap-4 text-gray-700">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-gray-700">
                     <div class="text-center">
                         <div class="text-3xl mb-2">1️⃣</div>
                         <p>路線を選択します</p>
@@ -5076,8 +5065,8 @@
         // YouTube IFrame APIの準備完了時に呼ばれる関数
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '270',
-                width: '480',
+                height: '100%',
+                width: '100%',
                 playerVars: {
                     'playsinline': 1,
                     'controls': 1,
