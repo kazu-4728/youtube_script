@@ -124,16 +124,9 @@
                             </select>
                         </div>
                         
-                        <!-- Control Buttons -->
-                        <div class="flex gap-4">
-                            <button id="playButton" class="flex-1 py-4 px-6 text-white font-bold text-lg rounded-xl play-button disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                <i class="fas fa-play mr-2"></i>
-                                再生
-                            </button>
-                            <button id="stopButton" class="flex-1 py-4 px-6 text-white font-bold text-lg rounded-xl stop-button disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                <i class="fas fa-stop mr-2"></i>
-                                停止
-                            </button>
+                        <!-- YouTube Player -->
+                        <div id="playerContainer" class="mt-4">
+                            <div id="player"></div>
                         </div>
                         
                         <!-- Current Selection Display -->
@@ -157,8 +150,8 @@
                 </div>
             </div>
             
-            <!-- YouTube Player (Hidden) -->
-            <div id="playerContainer" class="hidden">
+            <!-- YouTube Player -->
+            <div id="playerContainer">
                 <div id="player"></div>
             </div>
             
@@ -179,7 +172,7 @@
                     </div>
                     <div class="text-center">
                         <div class="text-3xl mb-2">3️⃣</div>
-                        <p>再生ボタンを押します</p>
+                        <p>プレーヤーで再生します</p>
                     </div>
                 </div>
             </div>
@@ -196,8 +189,6 @@
         // DOM要素
         const routeSelect = document.getElementById('routeSelect');
         const stationSelect = document.getElementById('stationSelect');
-        const playButton = document.getElementById('playButton');
-        const stopButton = document.getElementById('stopButton');
         const currentSelection = document.getElementById('currentSelection');
         const selectionText = document.getElementById('selectionText');
 
@@ -208,14 +199,15 @@
         // YouTube IFrame APIの準備完了時に呼ばれる関数
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '1',
-                width: '1',
+                height: '270',
+                width: '480',
                 playerVars: {
-                    'playsinline': 1
+                    'playsinline': 1,
+                    'controls': 1,
+                    'fs': 1
                 },
                 events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onReady': onPlayerReady
                 }
             });
         }
@@ -223,12 +215,6 @@
         function onPlayerReady(event) {
             console.log('YouTube Player Ready');
             initializeApp(); // プレーヤー準備完了後にアプリを初期化
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED) {
-                resetPlayButton();
-            }
         }
 
         // 初期化
@@ -251,8 +237,6 @@
         function setupEventListeners() {
             routeSelect.addEventListener('change', handleRouteChange);
             stationSelect.addEventListener('change', handleStationChange);
-            playButton.addEventListener('click', handlePlay);
-            stopButton.addEventListener('click', handleStop);
         }
 
         // 路線変更時の処理
@@ -273,24 +257,20 @@
                 stationSelect.disabled = false;
             }
             
-            updateButtons();
             hideCurrentSelection();
         }
 
         // 駅変更時の処理
         function handleStationChange() {
-            updateButtons();
-            updateCurrentSelection();
-        }
-
-        // ボタンの状態を更新
-        function updateButtons() {
             const routeSelected = routeSelect.value;
             const stationSelected = stationSelect.value;
-            const canPlay = routeSelected && stationSelected;
-            
-            playButton.disabled = !canPlay;
-            stopButton.disabled = true;
+
+            if (routeSelected && stationSelected) {
+                const videoId = stationData[routeSelected].stations[stationSelected][0].videoId;
+                currentVideoId = videoId;
+                player.cueVideoById(videoId);
+                updateCurrentSelection();
+            }
         }
 
         // 現在の選択を表示
@@ -312,52 +292,6 @@
         // 現在の選択を非表示
         function hideCurrentSelection() {
             currentSelection.classList.add('hidden');
-        }
-
-        // 再生処理
-        function handlePlay() {
-            const routeSelected = routeSelect.value;
-            const stationSelected = stationSelect.value;
-            
-            if (!routeSelected || !stationSelected || !player) return;
-            
-            // 選択された駅の最初のメロディの動画IDを取得
-            const videoId = stationData[routeSelected].stations[stationSelected][0].videoId;
-            currentVideoId = videoId;
-            
-            // ボタンの状態を更新
-            playButton.disabled = true;
-            stopButton.disabled = false;
-            playButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>読み込み中...';
-            
-            // YouTube動画を読み込んで再生
-            player.loadVideoById(videoId);
-            player.playVideo().catch(error => {
-                console.error('YouTube video playback failed:', error);
-                resetPlayButton(); // エラー時もボタンをリセット
-            });
-            
-            // 少し遅れてボタンのテキストを元に戻す
-            setTimeout(() => {
-                if (player.getPlayerState() !== YT.PlayerState.PLAYING) { // 再生中でなければ
-                    resetPlayButton();
-                }
-            }, 2000);
-        }
-
-        // 停止処理
-        function handleStop() {
-            if (player) {
-                player.stopVideo();
-            }
-            resetPlayButton();
-        }
-
-        // 再生ボタンをリセット
-        function resetPlayButton() {
-            playButton.disabled = false;
-            stopButton.disabled = true;
-            playButton.innerHTML = '<i class="fas fa-play mr-2"></i>再生';
         }
 
         // アプリケーション開始
